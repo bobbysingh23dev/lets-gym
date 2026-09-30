@@ -1,0 +1,337 @@
+@import "tailwindcss";
+
+/*
+  LetsGym design tokens (Tailwind CSS v4).
+
+  Tokens declared in `@theme` become BOTH:
+    - CSS variables you can reference directly:  var(--color-accent)
+    - Tailwind utilities generated from the name: bg-accent, text-accent,
+      border-accent, ring-accent, etc.
+
+  The app is dark-mode only, so tokens are defined once (no light variant).
+*/
+@theme {
+  /* Surfaces */
+  --color-background: #0d0e12; /* app canvas */
+  --color-surface: #16181e; /* cards, panels */
+  --color-surface-2: #1e212a; /* raised / hover surface */
+
+  /* Brand */
+  --color-accent: #ccff00; /* neon lime primary accent */
+  --color-accent-foreground: #0d0e12; /* text/icons sitting on the accent */
+
+  /* Status — used as text/tint via opacity (e.g. text-warning, bg-warning/10).
+     Add --color-success / --color-danger here following the same pattern. */
+  --color-warning: #fbbf24; /* amber — form & safety callouts */
+
+  /* Text */
+  --color-foreground: #ffffff; /* primary text */
+  --color-muted: #94a3b8; /* secondary text */
+
+  /* Lines */
+  --color-border: #262a34;
+
+  /* Fonts — wired to the next/font CSS variables set in layout.tsx */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-anton), "Arial Narrow", Impact, sans-serif;
+
+  /* Shared radius used by cards and buttons */
+  --radius-xl: 0.875rem;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+/* Neon selection to match the brand */
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+/* ---------- Hero effects ---------- */
+
+/* Cinematic grade over the hero video, layered from the --color-background token
+   so it stays on-palette: darker on the left (where the text sits) and a deep
+   fade at the bottom. */
+.hero-scrim {
+  background:
+    linear-gradient(
+      to top,
+      var(--color-background) 2%,
+      color-mix(in srgb, var(--color-background) 55%, transparent) 46%,
+      color-mix(in srgb, var(--color-background) 10%, transparent) 100%
+    ),
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-background) 85%, transparent),
+      color-mix(in srgb, var(--color-background) 28%, transparent) 55%,
+      transparent 80%
+    );
+}
+
+/* Subtle film grain for depth */
+.bg-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Slow Ken Burns drift on the hero video */
+@keyframes hero-kenburns {
+  from {
+    transform: scale(1.03);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
+.animate-kenburns {
+  animation: hero-kenburns 26s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-kenburns {
+    animation: none;
+  }
+}
+
+/* ---------- High-tech hero FX ---------- */
+
+/* Rotating conic glow ring framing the hero. Drawn on ::after and masked to a
+   1px border so only the outline glows. --hero-angle is animated via @property
+   so the conic gradient can actually spin (custom props are otherwise static). */
+@property --hero-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes hero-ring-spin {
+  to {
+    --hero-angle: 360deg;
+  }
+}
+.hero-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--hero-angle),
+    transparent 0deg,
+    color-mix(in srgb, var(--color-accent) 85%, transparent) 40deg,
+    transparent 130deg,
+    transparent 235deg,
+    color-mix(in srgb, var(--color-accent) 40%, transparent) 300deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: hero-ring-spin 9s linear infinite;
+}
+
+/* Perspective HUD grid, faded in toward the bottom-left where the copy sits. */
+.hero-grid {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--color-accent) 55%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-accent) 55%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 44px 44px;
+  opacity: 0.09;
+  -webkit-mask-image: radial-gradient(
+    120% 85% at 18% 100%,
+    #000 8%,
+    transparent 72%
+  );
+  mask-image: radial-gradient(120% 85% at 18% 100%, #000 8%, transparent 72%);
+  animation: hero-grid-pan 22s linear infinite;
+}
+@keyframes hero-grid-pan {
+  to {
+    background-position:
+      0 -44px,
+      -44px 0;
+  }
+}
+
+/* Neon spotlight that tracks the cursor. --mx/--my are set in Hero.tsx. */
+.hero-spot {
+  background: radial-gradient(
+    460px circle at var(--mx, 28%) var(--my, 38%),
+    color-mix(in srgb, var(--color-accent) 20%, transparent),
+    transparent 62%
+  );
+  mix-blend-mode: screen;
+}
+
+/* Neon embers drifting up the hero. Per-particle timing set inline. */
+.hero-ember {
+  position: absolute;
+  bottom: -10px;
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  box-shadow: 0 0 8px 1px color-mix(in srgb, var(--color-accent) 80%, transparent);
+  opacity: 0;
+  animation: hero-ember-rise var(--dur, 9s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+@keyframes hero-ember-rise {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-70vh) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Slow neon scanline sweeping down the hero, HUD-style. */
+.hero-scan {
+  height: 20%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--color-accent) 35%, transparent),
+    transparent
+  );
+  opacity: 0;
+  animation: hero-scan-move 8s ease-in-out infinite;
+}
+@keyframes hero-scan-move {
+  0%,
+  100% {
+    transform: translateY(-40%);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(440%);
+    opacity: 0.22;
+  }
+}
+
+/* Staggered entrance for the hero content (delay set inline per element). */
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hero-rise {
+  animation: hero-rise 0.75s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Breathing neon glow on the accent headline word. */
+.hero-text-glow {
+  text-shadow: 0 0 22px color-mix(in srgb, var(--color-accent) 55%, transparent);
+  animation: hero-text-pulse 3.8s ease-in-out infinite;
+}
+@keyframes hero-text-pulse {
+  50% {
+    text-shadow: 0 0 40px color-mix(in srgb, var(--color-accent) 90%, transparent);
+  }
+}
+
+/* Glowing primary CTA with a shine that sweeps across on hover. */
+.hero-cta {
+  position: relative;
+  overflow: hidden;
+  animation: hero-cta-pulse 3s ease-in-out infinite;
+}
+@keyframes hero-cta-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 22px -6px color-mix(in srgb, var(--color-accent) 70%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 34px 0 color-mix(in srgb, var(--color-accent) 90%, transparent);
+  }
+}
+.hero-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-130%);
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 70%
+  );
+}
+.hero-cta:hover::after {
+  transform: translateX(130%);
+  transition: transform 0.7s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-ring::after,
+  .hero-grid,
+  .hero-ember,
+  .hero-scan,
+  .hero-rise,
+  .hero-text-glow,
+  .hero-cta {
+    animation: none;
+  }
+  .hero-ember,
+  .hero-scan {
+    opacity: 0;
+  }
+}
+
+/* ---------- Scroll reveal ---------- */
+
+/* Sections fade + rise into view once, driven by the <Reveal> client wrapper
+   toggling `.reveal-in`. Delay is set inline for staggered grids. */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
